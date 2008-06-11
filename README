@@ -1,0 +1,4 @@
+This is the firmware for the Trusted Execution Module (TEM) prototype.
+
+The firmware is a JavaCard applet, and it can turn any capable JavaCard into a
+TEM.
