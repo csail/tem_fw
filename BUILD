@@ -17,6 +17,8 @@ if you're just talking to a TEM.
 
 
 MAKING JCOP BUILD UNDER ECLIPSE 3.2+
+Update: the codebase now forces the changes needed, via the files in the .settings
+folder. Look below only if, for some reason, you can't get the firmware built.
 
 JCOP cannot CAPify classes above Java 1.4, and Eclipse 3.2+ default to Java 5.0.
 1) Go to your JCOP project's preferences, then choose the Java Compiler tab.
