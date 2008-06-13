@@ -1,6 +1,5 @@
 package edu.mit.csail.tc;
 
-import javacard.framework.JCSystem;
 import javacard.framework.Util;
 
 /**
@@ -16,7 +15,7 @@ import javacard.framework.Util;
  */
 public class TEMTag {
 	/* The firmware version posted in the tag. */
-	public static short FIRMWARE_VER = 0x010A;
+	public static short FIRMWARE_VER = 0x0109;
 	
 	/**
 	 * The tag information.

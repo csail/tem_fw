@@ -1,3 +1,3 @@
-v1.10. Loader does in-place SECpack unpacking. Better memory layout. Improved perf.
+v1.9.1. Loader does in-place SECpack unpacking. Better memory layout. Improved perf.
 
 v1.9. Shifted from dynamic memory allocation to a static layout.
