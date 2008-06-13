@@ -16,7 +16,7 @@ import javacard.framework.Util;
  */
 public class TEMTag {
 	/* The firmware version posted in the tag. */
-	public static short FIRMWARE_VER = 0x0109;
+	public static short FIRMWARE_VER = 0x010A;
 	
 	/**
 	 * The tag information.

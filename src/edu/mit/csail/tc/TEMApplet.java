@@ -383,11 +383,11 @@ public class TEMApplet extends Applet {
 			keyIndex = buf[ISO7816.OFFSET_P2];
 			if(TEMBuffers.pin(bufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
-			temBuffer = TEMBuffers.get(bufferIndex);
-			bufferSize = TEMBuffers.size(bufferIndex);
 			
-			TEMExecution.bindSecPack(keyIndex, temBuffer, bufferSize);			
+			TEMExecution.bindSecPack(keyIndex, bufferIndex);
 			TEMBuffers.unpin(bufferIndex);
+			if(TEMExecution.status != TEMExecution.STATUS_READY)
+				TEMBuffers.release(bufferIndex);
 			TEMApplet.sendSuccessAndByte(apdu, (TEMExecution.status == TEMExecution.STATUS_READY) ? (byte)1 : (byte)0);
 			break;
 			

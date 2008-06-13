@@ -61,10 +61,10 @@ class TEMBuffers {
 	 */
 	public static void layout() {		
 		// initial memory layout - RAM
-		for(byte i = 1; i >= 0; i--) {
+		for(byte i = 0; i <= 1; i++) {
 			short availableMemory = JCSystem.getAvailableMemory(JCSystem.MEMORY_TYPE_TRANSIENT_DESELECT);
 			availableMemory -= (short)280;
-			short nextSize = (i != 0) ? (short)(availableMemory / (short)2) : availableMemory;
+			short nextSize = (i != 0) ? availableMemory : 512;
 			buffers[i] = JCSystem.makeTransientByteArray(nextSize, JCSystem.CLEAR_ON_DESELECT);
 		}
 		

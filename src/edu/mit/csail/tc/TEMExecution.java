@@ -523,18 +523,25 @@ class TEMExecution {
 	/**
 	 * Binds the SEC contained in a SECpack to the engine, so the SEC can be executed.
 	 * @param keyIndex the ID of the key which can decrypt the SECpack
-	 * @param secPack the SECpack containing the SEC to be bound
-	 * @param secPackLength the length of SECpack containing the SEC to be bound
+	 * @param secPackIndex the ID of the buffer containing the SECpack of the SEC to be bound
 	 * @return <code>true</code> if unpacking succeeded, or <code>false</code> if SECpack unpacking failed
 	 * 
 	 * For correct functionality, the engine's status should be {@link #STATUS_NOSEC}.
 	 */
-	public static boolean bindSecPack(byte keyIndex, byte[] secPack, short secPackLength) {
+	public static boolean bindSecPack(byte keyIndex, byte secPackIndex) {
 		// ASSERT: status == STATUS_NOSEC
-		
+				
+		byte[] secPack = TEMBuffers.get(secPackIndex);
+		short secPackLength = TEMBuffers.size(secPackIndex);
+
 		// refuse SECpacks we can't read
 		if(secPack[0] != (byte)1)
 			return false;
+		
+		// pick up the header parts that are interesting
+		TEMExecution.i_secSP = Util.getShort(secPack, (short)8);
+		TEMExecution.i_secIP = Util.getShort(secPack, (short)10);
+		TEMExecution.i_devhooks = (byte)(secPack[1] & (byte)1) != (byte)0;		
 		
 		// compute sizes for all SECimage parts
 		short headerSize = TEMCrypto.getDigestBlockLength();
@@ -551,42 +558,33 @@ class TEMExecution {
 			if((short)(zerosSize + plainPackSize) < TEMCrypto.getDigestLength())
 				zerosSize = (short)(TEMCrypto.getDigestLength() - plainPackSize);			
 		}
-		
-		// allocate the SEC buffer		
-		byte secBufferIndex = TEMBuffers.create((short)(imageSize + zerosSize));
-		if(secBufferIndex == TEMBuffers.INVALID_BUFFER) return false;
-		TEMBuffers.pin(secBufferIndex);
-		byte[] secBuffer = TEMBuffers.get(secBufferIndex);		
-		
+				
+		// save the header for sig checking
+		Util.arrayCopyNonAtomic(secPack, (short)0, testHash, (short)0, headerSize);
 		// assemble the SEC image
-		Util.arrayCopyNonAtomic(secPack, headerSize, secBuffer, (short)0, frozenSize);
+		Util.arrayCopyNonAtomic(secPack, headerSize, secPack, (short)0, frozenSize);
 		short secOffset = (short)frozenSize;
 		if(frozenSize != 0 || privateSize != 0) {
 			// decrypt and check signature
-			TEMCrypto.cryptWithKey(keyIndex, secPack, (short)(frozenSize + headerSize), cryptedSize, secBuffer, frozenSize, false);
+			TEMCrypto.cryptWithKey(keyIndex, secPack, (short)(frozenSize + headerSize), cryptedSize, secPack, frozenSize, false);
 			secOffset += privateSize;
 			
-			TEMCrypto.digest2(secPack, (short)0, headerSize, secBuffer, (short)0, secOffset, testHash, (short)0);
-			if(Util.arrayCompare(testHash, (short)0, secBuffer, secOffset, (short)testHash.length) != 0) {
+			TEMCrypto.digest2(testHash, (short)0, headerSize, secPack, (short)0, secOffset, testHash, (short)0);
+			if(Util.arrayCompare(testHash, (short)0, secPack, secOffset, (short)testHash.length) != 0) {
 				// signature check failed
 				// TODO: set better exception checking
-				TEMBuffers.unpin(secBufferIndex);
-				TEMBuffers.release(secBufferIndex);
 				return false;
 			}
 		}
-		Util.arrayCopyNonAtomic(secPack, securedPackSize, secBuffer, secOffset, plainPackSize);
+		Util.arrayCopyNonAtomic(secPack, securedPackSize, secPack, secOffset, plainPackSize);
+		Util.arrayFillNonAtomic(secPack, (short)(secOffset + plainPackSize), (short)(secPackLength - secOffset - plainPackSize), (byte)0);
 		
 		// prepare for SEC execution
-		TEMExecution.i_secBufferIndex = secBufferIndex;
-		TEMExecution.i_secSP = Util.getShort(secPack, (short)8);
-		TEMExecution.i_secIP = Util.getShort(secPack, (short)10);
-		TEMExecution.i_devhooks = (byte)(secPack[1] & (byte)1) != (byte)0;
+		TEMExecution.i_secBufferIndex = secPackIndex;
 		TEMExecution.i_nextPSCell = PS_INVALID;
 		TEMExecution.outLength = 0;
 		TEMExecution.status = STATUS_READY;
 		
-		TEMBuffers.unpin(secBufferIndex);
 		return true;
 	}
 
