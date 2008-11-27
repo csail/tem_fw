@@ -12,8 +12,8 @@ import javacard.framework.Util;
  * @author Victor Costan
  *
  * For this TEM implementation, the communication module is the JavaCard Applet.
- * The communication module processes commands from the outside, and converts them
- * into calls to the appropriate modules.
+ * The communication module processes commands from the outside, and converts
+ * them into calls to the appropriate modules.
  * 
  * In the JavaCard world, commands are APDUs (we don't use the JavaCard RMI
  * mechanism).
@@ -54,14 +54,15 @@ public class TEMApplet extends Applet {
 		apdu.setOutgoingAndSend((short)0, (short)2);
 	}
 
-	private static void sendSuccessAndByteShort(APDU apdu, byte byteValue, short shortValue) {
+	private static void sendSuccessAndByteShort(APDU apdu, byte byteValue,
+	                                            short shortValue) {
 		byte[] buf = apdu.getBuffer();
 		buf[0] = byteValue;
 		Util.setShort(buf, (short)1, shortValue);
 		apdu.setOutgoingAndSend((short)0, (short)3);
 	}
-	
-	public void process(APDU apdu) {
+
+  public void process(APDU apdu) {
 		// Good practice: Return 9000 on SELECT
 		if (selectingApplet()) {
 			return;
@@ -189,17 +190,17 @@ public class TEMApplet extends Applet {
 			 */			
 		
 			bufferIndex = buf[ISO7816.OFFSET_P1];
-			short bufferOffset = (short)((short)buf[ISO7816.OFFSET_P2] * TEMBuffers.chunkSize);
+			short bufferOffset = (short)(buf[ISO7816.OFFSET_P2] * TEMBuffers.chunkSize);
 			
 			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(bufferIndex)) ?
 				TEMBuffers.get(bufferIndex) : null;
 			bufferSize = TEMBuffers.size(bufferIndex);
-			if(temBuffer == null || bufferOffset > bufferSize)
+			if (temBuffer == null || bufferOffset > bufferSize)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
 
 			apdu.setOutgoing();
-			outputLength = ((short)(bufferSize - bufferOffset) >= TEMBuffers.chunkSize) ?
-				TEMBuffers.chunkSize :  (short)(bufferSize - bufferOffset);
+			outputLength = (bufferSize - bufferOffset >= TEMBuffers.chunkSize) ?
+				  TEMBuffers.chunkSize : (short)(bufferSize - bufferOffset);
 			apdu.setOutgoingLength(outputLength);
 			apdu.sendBytesLong(temBuffer, bufferOffset, outputLength);
 			TEMBuffers.unpin(bufferIndex);
@@ -219,13 +220,13 @@ public class TEMApplet extends Applet {
 			 *  6A 86 (incorrect P1P2) -- if given an invalid buffer ID or an invalid chunk number
 			 */			
 			bufferIndex = buf[ISO7816.OFFSET_P1];
-			bufferOffset = (short)((short)buf[ISO7816.OFFSET_P2] * TEMBuffers.chunkSize);			
+			bufferOffset = (short)(buf[ISO7816.OFFSET_P2] * TEMBuffers.chunkSize);			
 			bufferSize = apdu.setIncomingAndReceive();
 			
 			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(bufferIndex)) ? TEMBuffers.get(bufferIndex) : null;
-			if(temBuffer == null || ((short)(bufferOffset + bufferSize) > TEMBuffers.size(bufferIndex)))
+			if(temBuffer == null || (bufferOffset + bufferSize > TEMBuffers.size(bufferIndex)))
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
-			Util.arrayCopyNonAtomic(buf, (short)ISO7816.OFFSET_CDATA, temBuffer, bufferOffset, bufferSize);
+			Util.arrayCopyNonAtomic(buf, ISO7816.OFFSET_CDATA, temBuffer, bufferOffset, bufferSize);
 			TEMBuffers.unpin(bufferIndex);
 			TEMApplet.sendSuccess(apdu);
 			break;
@@ -238,7 +239,7 @@ public class TEMApplet extends Applet {
 			 * Returns:
 			 *  short -- the length, in bytes, of a buffer chunk
 			 */
-			TEMBuffers.guessChunkSize(apdu);
+			TEMBuffers.guessChunkSize();
 			TEMApplet.sendSuccessAndShort(apdu, TEMBuffers.chunkSize);
 			break;
 			
@@ -284,7 +285,7 @@ public class TEMApplet extends Applet {
 				bufferSize = TEMBuffers.stat(buf, (short)0);
 			else
 				bufferSize = TEMCrypto.stat(buf, (short)0);
-			apdu.setOutgoingAndSend((short)0, (short)bufferSize);
+			apdu.setOutgoingAndSend((short)0, bufferSize);
 			break;
 
 ///////////////// TAG ///////////////////////////
@@ -472,7 +473,7 @@ public class TEMApplet extends Applet {
 			 *  this command is only implemented on dev TEMs
 			 */
 			bufferSize = TEMExecution.devTrace(buf, (short)0);
-			apdu.setOutgoingAndSend((short)0, (short)bufferSize);
+			apdu.setOutgoingAndSend((short)0, bufferSize);
 			break;
 			
 			
@@ -590,7 +591,7 @@ public class TEMApplet extends Applet {
 			
 			boolean encrypting = (buf[ISO7816.OFFSET_INS] == 0x44);
 			bufferSize = TEMBuffers.size(bufferIndex);
-			outputLength = (encrypting) ? TEMCrypto.getEncryptedBlockSize(keyIndex, bufferSize) : bufferSize;
+			outputLength = (encrypting) ? TEMCrypto.getEncryptedDataSize(keyIndex, bufferSize) : bufferSize;
 			outBufferIndex = TEMBuffers.create(outputLength);
 			TEMBuffers.pin(outBufferIndex);
 			outBuffer = TEMBuffers.get(outBufferIndex);

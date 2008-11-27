@@ -31,11 +31,11 @@ class TEMExecution {
 	/** The status of the last proc's execution. */
 	public static byte status;
 	
-	/** The SEC buffer to be used when {@link #execute(short, short, byte[])} is called. */
+	/** The SEC buffer to be used when {@link #execute()} is called. */
 	public static byte i_secBufferIndex;
-	/** The initial IP value to be used when {@link #execute(short, short, byte[])} is called. */
+	/** The initial IP value to be used when {@link #execute()} is called. */
 	private static short i_secIP;
-	/** The initial SP value to be used when {@link #execute(short, short, byte[])} is called. */
+	/** The initial SP value to be used when {@link #execute()} is called. */
 	private static short i_secSP;
 	/** IF <code>true</code>, the currently loaded SEC allows development hooks. */
 	private static boolean i_devhooks;
@@ -59,8 +59,10 @@ class TEMExecution {
 		status = STATUS_NOSEC;
 		outBufferIndex = TEMBuffers.INVALID_BUFFER;
 		i_secBufferIndex = TEMBuffers.INVALID_BUFFER;
-		testHash = JCSystem.makeTransientByteArray(TEMCrypto.getDigestLength(), JCSystem.CLEAR_ON_DESELECT);			
-		authorizedKeys = JCSystem.makeTransientBooleanArray(TEMCrypto.NUM_KEYS, JCSystem.CLEAR_ON_DESELECT);
+		testHash = JCSystem.makeTransientByteArray(TEMCrypto.getDigestLength(),
+		    JCSystem.CLEAR_ON_DESELECT);			
+		authorizedKeys = JCSystem.makeTransientBooleanArray(TEMCrypto.NUM_KEYS,
+        JCSystem.CLEAR_ON_DESELECT);
 		// authorizedKeys should start out false
 	}
 	
@@ -158,10 +160,10 @@ class TEMExecution {
 								result = operand1;
 							}
 							else if((opcode & 2) != 0) {
-									result = (short)Util.arrayCompare(pBuffer, operand2, pBuffer, operand3, operand1);
+									result = Util.arrayCompare(pBuffer, operand2, pBuffer, operand3, operand1);
 							}
 							else
-								if(operand3 == (short)-1) {
+								if(operand3 == -1) {
 									result = TEMCrypto.digest(pBuffer, operand2, operand1, outBuffer, outOffset);
 									outOffset += result;
 								}
@@ -234,7 +236,7 @@ class TEMExecution {
 						if((opcode & 1) != 0)
 							result = Util.getShort(pBuffer, operand2);
 						else
-							result = (short)pBuffer[operand2];
+							result = pBuffer[operand2];
 						Util.setShort(pBuffer, sp, result); sp += 2;
 						break;				
 					case 0x08:	// stb (store byte)
@@ -256,18 +258,18 @@ class TEMExecution {
 					case 0x04:	// pop
 						sp -= (short)2; break;
 					case 0x05:	// popn
-						operand1 = (short)((short)pBuffer[ip] * (short)2); ip++;
+						operand1 = (short)(pBuffer[ip] * 2); ip++;
 						sp -= operand1; break;
 					case 0x0C:	// dupn
-						operand1 = (short)((short)pBuffer[ip] * (short)2); ip++;
+						operand1 = (short)(pBuffer[ip] * 2); ip++;
 						Util.arrayCopyNonAtomic(pBuffer, (short)(sp - operand1), pBuffer, sp, operand1);
 						sp += operand1; break;
 					case 0x0D:	// flipn
-						operand1 = (short)((short)pBuffer[ip] * (short)2); ip++;
+						operand1 = (short)(pBuffer[ip] * 2); ip++;
 						
-						operand2 = (short)(sp - (short)2);
+						operand2 = (short)(sp - 2);
 						operand1 = (short)(sp - operand1);
-						for(; operand1 < operand2; operand1 += (short)2, operand2 -= (short)2) {
+						for(; operand1 < operand2; operand1 += 2, operand2 -= 2) {
 							operand3 = Util.getShort(pBuffer, operand1);
 							operand4 = Util.getShort(pBuffer, operand2);
 							Util.setShort(pBuffer, operand1, operand4);
@@ -337,15 +339,15 @@ class TEMExecution {
 					case 0x0B: // pswrvb  (write persistent store, variable buffers)					
 					case 0x0C: // psrdfxb (read persistent store, fixed buffers)
 					case 0x0D: // psrdvb  (read persistent store, variable buffers)
-						if((opcode & 0x01) != 0) {
-							 sp -= (short)2; operand2 = Util.getShort(pBuffer, sp);
-							 sp -= (short)2; operand1 = Util.getShort(pBuffer, sp);
+						if ((opcode & 0x01) != 0) {
+							 sp -= 2; operand2 = Util.getShort(pBuffer, sp);
+							 sp -= 2; operand1 = Util.getShort(pBuffer, sp);
 						}
 						else {
 							operand1 = Util.getShort(pBuffer, ip); ip += 2;
 							operand2 = Util.getShort(pBuffer, ip); ip += 2;
 						}
-						if((opcode & 0x04) != 0 && operand2 == (short)-1) {
+						if ((opcode & 0x04) != 0 && operand2 == -1) {
 							condition = TEMStore.readOrWrite(pBuffer, operand1, outBuffer, outOffset, (opcode & 4) != 0, (opcode & 2) != 0);					
 							result = condition ? TEMStore.VALUE_SIZE : (short)0;
 							outOffset += result;
@@ -362,14 +364,15 @@ class TEMExecution {
 						break;
 					case 0x0E: // pshkfxb (persistent store has key, fixed buffers)
 					case 0x0F: // pshkvb  (persistent store has key, variable buffers)
-						if((opcode & 0x01) != 0) {
-							 sp -= (short)2; operand1 = Util.getShort(pBuffer, sp);
+						if ((opcode & 0x01) != 0) {
+							 sp -= 2; operand1 = Util.getShort(pBuffer, sp);
 						}
 						else {
 							operand1 = Util.getShort(pBuffer, ip); ip += 2;
 						}
-						result = (TEMStore.findCell(pBuffer, operand1) != TEMStore.INVALID_CELL) ? (short)1 : (short)0;
-						Util.setShort(pBuffer, sp, result); sp += 2;						
+						result = (short)((TEMStore.findCell(pBuffer, operand1) !=
+						                 TEMStore.INVALID_CELL) ? 1 : 0);
+						Util.setShort(pBuffer, sp, result); sp += 2;
 						break;
 					/*
 					case 0x0C: // psnew (new persistent store location)
@@ -413,30 +416,38 @@ class TEMExecution {
 					case 0x06: // kvsfxb (key-verify signature with fixed buffers)
 					case 0x07: // kvsvb (key-verify signature with variable buffers)
 						if((opcode & 1) != 0) {
-							 sp -= (short)2; operand3 = Util.getShort(pBuffer, sp);
-							 sp -= (short)2; operand2 = Util.getShort(pBuffer, sp);
-							 sp -= (short)2; operand1 = Util.getShort(pBuffer, sp);
+							 sp -= 2; operand3 = Util.getShort(pBuffer, sp);
+							 sp -= 2; operand2 = Util.getShort(pBuffer, sp);
+							 sp -= 2; operand1 = Util.getShort(pBuffer, sp);
 						}
 						else {
 							operand1 = Util.getShort(pBuffer, ip); ip += 2;
 							operand2 = Util.getShort(pBuffer, ip); ip += 2;
 							operand3 = Util.getShort(pBuffer, ip); ip += 2;
 						}
-						sp -= (short)2; operand4 = Util.getShort(pBuffer, sp);
-						if(authorizedKeys[operand4] == false)
+						sp -= 2; operand4 = Util.getShort(pBuffer, sp);
+						if (authorizedKeys[operand4] == false)
 							ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);						
-						if(operand3 == (short)-1) {
-							if((opcode & 0x04) == 0)
-								result = TEMCrypto.cryptWithKey((byte)operand4, pBuffer, operand2, operand1, outBuffer, outOffset, ((opcode & 2) == 0));
+						if (operand3 == -1) {
+							if ((opcode & 0x04) == 0)
+								result = TEMCrypto.cryptWithKey((byte)operand4, pBuffer,
+								                                operand2, operand1, outBuffer,
+								                                outOffset, ((opcode & 2) == 0));
 							else
-								result = TEMCrypto.signWithKey((byte)operand4, pBuffer, operand2, operand1, outBuffer, outOffset, ((opcode & 2) == 0));
+								result = TEMCrypto.signWithKey((byte)operand4, pBuffer,
+								                               operand2, operand1, outBuffer,
+								                               outOffset, ((opcode & 2) == 0));
 							outOffset += result;
 						}
 						else {
-							if((opcode & 0x04) == 0)							
-								result = TEMCrypto.cryptWithKey((byte)operand4, pBuffer, operand2, operand1, pBuffer, operand3, ((opcode & 2) == 0));
+							if ((opcode & 0x04) == 0)							
+								result = TEMCrypto.cryptWithKey((byte)operand4, pBuffer,
+								                                operand2, operand1, pBuffer,
+								                                operand3, ((opcode & 2) == 0));
 							else
-								result = TEMCrypto.signWithKey((byte)operand4, pBuffer, operand2, operand1, pBuffer, operand3, ((opcode & 2) == 0));
+								result = TEMCrypto.signWithKey((byte)operand4, pBuffer,
+								                               operand2, operand1, pBuffer,
+								                               operand3, ((opcode & 2) == 0));
 						}
 						Util.setShort(pBuffer, sp, result); sp += 2;
 						break;
@@ -474,10 +485,10 @@ class TEMExecution {
 						Util.setShort(pBuffer, sp, result); sp += 2;
 						break;
 					case 0x0E: // genkp (generate key pair)
-						operand1 = (short)pBuffer[ip]; ip++;
+						operand1 = pBuffer[ip]; ip++;
 						result = TEMCrypto.generateKey(operand1 == 0);
 						operand2 = (short)(result >> 8);
-						operand3 = (short)(result & (short)0xff);
+						operand3 = (short)(result & 0xff);
 						if(operand2 != TEMCrypto.INVALID_KEY)
 							authorizedKeys[operand2] = true;
 						if(operand3 != TEMCrypto.INVALID_KEY)
@@ -548,8 +559,7 @@ class TEMExecution {
 		short frozenSize = Util.getShort(secPack, (short)2);
 		short privateSize = Util.getShort(secPack, (short)4);
 		short zerosSize = Util.getShort(secPack, (short)6);
-		short cryptedSize = (frozenSize != 0 || privateSize != 0) ? TEMCrypto.getEncryptedBlockSize(keyIndex, (short)(privateSize + TEMCrypto.getDigestLength())) : 0;
-		short imageSize = (short)(secPackLength - headerSize + privateSize - cryptedSize);
+		short cryptedSize = (frozenSize != 0 || privateSize != 0) ? TEMCrypto.getEncryptedDataSize(keyIndex, (short)(privateSize + TEMCrypto.getDigestLength())) : 0;
 		short securedPackSize = (short)(frozenSize + cryptedSize + headerSize);
 		short plainPackSize = (short)(secPackLength - securedPackSize); 		
 
@@ -563,7 +573,7 @@ class TEMExecution {
 		Util.arrayCopyNonAtomic(secPack, (short)0, testHash, (short)0, headerSize);
 		// assemble the SEC image
 		Util.arrayCopyNonAtomic(secPack, headerSize, secPack, (short)0, frozenSize);
-		short secOffset = (short)frozenSize;
+		short secOffset = frozenSize;
 		if(frozenSize != 0 || privateSize != 0) {
 			// decrypt and check signature
 			TEMCrypto.cryptWithKey(keyIndex, secPack, (short)(frozenSize + headerSize), cryptedSize, secPack, frozenSize, false);
@@ -591,23 +601,23 @@ class TEMExecution {
 	/**
 	 * Unbinds the currently bound SEC from the engine.
 	 * 
-	 * This releases the resources associated with the bound SEC, and
-	 * prepares the engine for accepting another SECpack.
+	 * This releases the resources associated with the bound SEC, and prepares the
+	 * engine for accepting another SECpack.
 	 */
 	public static void unbindSec() {
-		// drop the SEC buffer
+		// Drop the SEC buffer
 		TEMBuffers.unpin(TEMExecution.i_secBufferIndex);
 		TEMBuffers.release(TEMExecution.i_secBufferIndex);
 		TEMExecution.i_secBufferIndex = TEMBuffers.INVALID_BUFFER;
 		
-		// drop the volatile (non-persistent) SEC keys
+		// Drop the volatile (non-persistent) SEC keys
 		TEMCrypto.releaseVolatileKeys();
-		for(short i = 0; i < authorizedKeys.length; i++)
+		for (short i = 0; i < authorizedKeys.length; i++)
 			authorizedKeys[i] = false;
 		
-		if(TEMExecution.status != STATUS_SUCCESS) {
-			// the SEC didn't execute well; discard its output, if it exists
-			if(TEMExecution.outBufferIndex != TEMBuffers.INVALID_BUFFER) {
+		if (TEMExecution.status != STATUS_SUCCESS) {
+			// Since the SEC didn't execute well, discard any output.
+			if (TEMExecution.outBufferIndex != TEMBuffers.INVALID_BUFFER) {
 				TEMBuffers.unpin(TEMExecution.outBufferIndex);
 				TEMBuffers.release(TEMExecution.outBufferIndex);
 			}
@@ -615,34 +625,41 @@ class TEMExecution {
 		TEMExecution.outBufferIndex = TEMBuffers.INVALID_BUFFER;
 		TEMExecution.status = STATUS_NOSEC;
 	}
+
+	/** The version of the trace output format. */
+	private static final short TRACE_VERSION = (short)0x01;
 	
 	/**
 	 * Produces a trace of the current SEC status.
+	 * 
 	 * @param buffer the buffer that the trace will be written to
-	 * @param offset the offset of the first byte in the buffer that will receive the trace
+	 * @param offset the offset of the first byte in the buffer that will receive
+	 *               the trace
 	 * @return the length of the trace produced
 	 */
-	public static short devTrace(byte[] buffer, short offset) {
-		if(i_devhooks == false) return 0;
+	public static final short devTrace(byte[] buffer, short offset) {
+		if (i_devhooks == false) return 0;
 		
-		Util.setShort(buffer, offset, (short)0x01); // trace format version
-		Util.setShort(buffer, (short)(offset + (short)2), TEMExecution.i_secSP);
-		Util.setShort(buffer, (short)(offset + (short)4), TEMExecution.i_secIP);
-		Util.setShort(buffer, (short)(offset + (short)6), TEMExecution.outLength);
-		Util.setShort(buffer, (short)(offset + (short)8), TEMExecution.i_nextPSCell);
+		Util.setShort(buffer, offset, TRACE_VERSION);
+		Util.setShort(buffer, (short)(offset + 2), TEMExecution.i_secSP);
+		Util.setShort(buffer, (short)(offset + 4), TEMExecution.i_secIP);
+		Util.setShort(buffer, (short)(offset + 6), TEMExecution.outLength);
+		Util.setShort(buffer, (short)(offset + 8), TEMExecution.i_nextPSCell);
 		
 		return (short)10;
 	}
 	
 	/**
 	 * Fixes a Persistent Store fault.
+	 * 
+   * This is called when the driver responds to a Persistent Store fault. The
+   * fault is fixed accoding to the given instructions, and the execution engine
+   * becomes ready to resume SEC execution. 
+	 * 
 	 * @param nextCell the next PStore cell to be used by psnew
 	 * 
-	 * This is called when the driver responds to a Persistent Store fault.
-	 * The fault is fixed accoding to the given instructions, and the
-	 * execution engine becomes ready to resume SEC execution. 
 	 */
-	public static void solvePStoreFault(short nextCell) {
+	public static final void solvePStoreFault(short nextCell) {
 		// ASSERT: status == STATUS_PSFAULT
 		TEMExecution.i_nextPSCell = nextCell;
 		TEMExecution.status = STATUS_READY;
