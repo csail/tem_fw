@@ -77,7 +77,7 @@ public class TEMApplet extends Applet {
 		
 		switch (buf[ISO7816.OFFSET_INS]) {
 ///////////////// LIFECYCLE ///////////////////////////			
-		case (byte)0x10:
+		case 0x10:
 			/**
 			 * 	INS 0x10 -- Activate TEM
 			 * Parameters:
@@ -89,7 +89,7 @@ public class TEMApplet extends Applet {
 			 * Remarks:
 			 *  this should be called in the factory to initialize the TEM
 			 */			
-			if(TEMBuffers.init() == false)
+			if (TEMBuffers.init() == false)
 				ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
 			TEMTag.init();
 			TEMCrypto.init();
@@ -99,7 +99,7 @@ public class TEMApplet extends Applet {
 			JCSystem.requestObjectDeletion();			
 			TEMApplet.sendSuccess(apdu);
 			break;
-		case (byte)0x11:
+		case 0x11:
 			/**
 			 * 	INS 0x10 -- Kill TEM
 			 * Parameters:
@@ -112,7 +112,7 @@ public class TEMApplet extends Applet {
 			 *  this renders a TEM useless and requires re-issuing
 			 *  the TEM applet can be uninstalled once this is called
 			 */
-			if(TEMBuffers.deinit() == false)
+			if (TEMBuffers.deinit() == false)
 				ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
 			TEMExecution.deinit();
 			TEMStore.deinit();
@@ -124,7 +124,7 @@ public class TEMApplet extends Applet {
 
 ///////////////// RESOURCE MANAGEMENT ///////////////////////////			
 
-		case (byte)0x20:
+		case 0x20:
 			/**
 			 * 	INS 0x20 -- Allocate buffer
 			 * Parameters:
@@ -136,13 +136,13 @@ public class TEMApplet extends Applet {
 			 */			
 			bufferSize = Util.getShort(buf, ISO7816.OFFSET_P1);
 			bufferIndex = TEMBuffers.create(bufferSize);
-			if(bufferIndex == TEMBuffers.INVALID_BUFFER)
+			if (bufferIndex == TEMBuffers.INVALID_BUFFER)
 				ISOException.throwIt(ISO7816.SW_FILE_FULL);
 
 			TEMApplet.sendSuccessAndByte(apdu, bufferIndex);
 			break;
 			
-		case (byte)0x21:
+		case 0x21:
 			/**
 			 * 	INS 0x21 -- Release buffer
 			 * Parameters:
@@ -157,7 +157,7 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccess(apdu);
 			break;
 
-		case (byte)0x22:
+		case 0x22:
 			/**
 			 * 	INS 0x22 -- Get buffer length
 			 * Parameters:
@@ -168,32 +168,36 @@ public class TEMApplet extends Applet {
 			 *  6A 86 (incorrect P1P2) -- if given an invalid buffer ID
 			 */			
 			bufferIndex = buf[ISO7816.OFFSET_P1];
-			if(!TEMBuffers.isPublic(bufferIndex) || TEMBuffers.pin(bufferIndex) == false)
+			if (!TEMBuffers.isPublic(bufferIndex) ||
+			    TEMBuffers.pin(bufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
 			TEMApplet.sendSuccessAndShort(apdu, TEMBuffers.size(bufferIndex));
 			TEMBuffers.unpin(bufferIndex);
 			break;
 		
-		case (byte)0x23:
+		case 0x23:
 			/**
 			 * 	INS 0x23 -- Read buffer chunk
 			 * Parameters:
 			 * 	P1 -- buffer ID
-			 *  P2 -- chunk number (0-based, each chunk is TEMBuffers.chunkSize bytes long)
+			 *  P2 -- chunk number (0-based, each chunk is TEMBuffers.chunkSize bytes)
 			 * Returns:
-			 * 	? bytes -- the requested chunk (exactly TEMBuffers.chunkSize bytes unless last chunk)
+			 * 	? bytes -- the requested chunk (exactly TEMBuffers.chunkSize bytes,
+			 *                                  unless this is the last chunk)
 			 * Throws:
-			 *  6A 86 (incorrect P1P2) -- if given an invalid buffer ID or an invalid chunk number
+			 *  6A 86 (incorrect P1P2) -- if the buffer ID or chunk number is invalid
 			 * Remarks:
-			 *  it is possible to get a 0 bytes return if the buffer fits in N chunks and P2 == N
-			 *  this facilitates reading the buffer w/o needing to query its length separately
+			 *  it is possible to get a 0 bytes return if the buffer fits in N chunks
+			 *  and P2 == N; this facilitates reading the buffer w/o needing to query
+			 *  its length separately
 			 */			
 		
 			bufferIndex = buf[ISO7816.OFFSET_P1];
-			short bufferOffset = (short)(buf[ISO7816.OFFSET_P2] * TEMBuffers.chunkSize);
+			short bufferOffset = (short)(buf[ISO7816.OFFSET_P2] *
+			                             TEMBuffers.chunkSize);
 			
-			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(bufferIndex)) ?
-				TEMBuffers.get(bufferIndex) : null;
+			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(
+			    bufferIndex)) ? TEMBuffers.get(bufferIndex) : null;
 			bufferSize = TEMBuffers.size(bufferIndex);
 			if (temBuffer == null || bufferOffset > bufferSize)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
@@ -206,32 +210,36 @@ public class TEMApplet extends Applet {
 			TEMBuffers.unpin(bufferIndex);
 			break;
 			
-		case (byte)0x24:
+		case 0x24:
 			/**
 			 * 	INS 0x24 -- Write buffer chunk
 			 * Parameters:
 			 * 	P1 -- buffer ID
-			 *  P2 -- chunk number (0-based, each chunk is TEMBuffers.chunkSize bytes long)
-			 *  Lc -- number of bytes to write to the chunk (should be TEMBuffers.chunkSize unless last chunk)
+			 *  P2 -- chunk number (0-based, each chunk is TEMBuffers.chunkSize bytes)
+			 *  Lc -- number of bytes to write to the chunk (should be
+			 *        TEMBuffers.chunkSize, unless this is the last last chunk)
 			 *  Lc bytes -- the chunk data
 			 * Returns:
 			 *  nothing
 			 * Throws:
-			 *  6A 86 (incorrect P1P2) -- if given an invalid buffer ID or an invalid chunk number
+			 *  6A 86 (incorrect P1P2) -- if the buffer ID or chunk number is invalid
 			 */			
 			bufferIndex = buf[ISO7816.OFFSET_P1];
 			bufferOffset = (short)(buf[ISO7816.OFFSET_P2] * TEMBuffers.chunkSize);			
 			bufferSize = apdu.setIncomingAndReceive();
 			
-			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(bufferIndex)) ? TEMBuffers.get(bufferIndex) : null;
-			if(temBuffer == null || (bufferOffset + bufferSize > TEMBuffers.size(bufferIndex)))
+			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(
+			    bufferIndex)) ? TEMBuffers.get(bufferIndex) : null;
+			if (temBuffer == null ||
+			    (bufferOffset + bufferSize > TEMBuffers.size(bufferIndex)))
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
-			Util.arrayCopyNonAtomic(buf, ISO7816.OFFSET_CDATA, temBuffer, bufferOffset, bufferSize);
+			Util.arrayCopyNonAtomic(buf, ISO7816.OFFSET_CDATA,
+			                        temBuffer, bufferOffset, bufferSize);
 			TEMBuffers.unpin(bufferIndex);
 			TEMApplet.sendSuccess(apdu);
 			break;
 			
-		case (byte)0x25:
+		case 0x25:
 			/**
 			 * INS 0x25 -- Reset and get buffer chunk length.
 			 * Parameters:
@@ -243,7 +251,7 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccessAndShort(apdu, TEMBuffers.chunkSize);
 			break;
 			
-		case (byte)0x26:
+		case 0x26:
 			/**
 			 * INS 0x26 -- Releases all the TEM buffers.
 			 * Parameters:
@@ -255,14 +263,15 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccess(apdu);
 			break;			
 
-		case (byte)0x27:
+		case 0x27:
 			/**
 			 * INS 0x27 -- Stat the TEM keys or buffers.
 			 * Parameters:
 			 *  P1 -- 0 for buffers, 1 for keys
 			 * Returns:
 			 *  the state of the TEM buffers
-			 *    3 shorts - available memory (PERMANENT, CLEAR_ON_RESET, CLEAR_ON_DESELECT)
+			 *    3 shorts - available memory
+			 *               (PERMANENT, CLEAR_ON_RESET, CLEAR_ON_DESELECT)
 			 *    4 bytes for each buffer entry
 			 *      byte - buffer type
 			 *        0: NOT_A_TRANSIENT_OBJECT 
@@ -281,7 +290,7 @@ public class TEMApplet extends Applet {
 			 *        0xAA: ASYMMETRIC_PRIVKEY
 			 *      short - key length (bits)
 			 */
-			if(buf[ISO7816.OFFSET_P1] == 0)
+			if (buf[ISO7816.OFFSET_P1] == 0)
 				bufferSize = TEMBuffers.stat(buf, (short)0);
 			else
 				bufferSize = TEMCrypto.stat(buf, (short)0);
@@ -290,7 +299,7 @@ public class TEMApplet extends Applet {
 
 ///////////////// TAG ///////////////////////////
 			
-		case (byte)0x30:
+		case 0x30:
 			/**
 			 * 	INS 0x30 -- Set tag
 			 * Parameters:
@@ -302,7 +311,8 @@ public class TEMApplet extends Applet {
 			 *  6A 84 (file full) -- there is not enough memory for the tag
 			 */			
 			bufferIndex = buf[ISO7816.OFFSET_P1];
-			if(!TEMBuffers.isPublic(bufferIndex) || TEMBuffers.pin(bufferIndex) == false)
+			if (!TEMBuffers.isPublic(bufferIndex) ||
+			    TEMBuffers.pin(bufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_FILE_FULL);
 			temBuffer = TEMBuffers.get(bufferIndex);
 			TEMTag.set(temBuffer, (short)0, TEMBuffers.size(bufferIndex));
@@ -311,7 +321,7 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccess(apdu);
 			break;
 			
-		case (byte)0x31:
+		case 0x31:
 			/**
 			 * 	INS 0x31 -- Get tag length
 			 * Parameters:
@@ -321,13 +331,13 @@ public class TEMApplet extends Applet {
 			 * Throws:
 			 *  69 86 (command not allowed) -- the tag has not been set yet
 			 */			
-			if(TEMTag.tag != null)
+			if (TEMTag.tag != null)
 				TEMApplet.sendSuccessAndShort(apdu, (short)TEMTag.tag.length);
 			else
 				ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
 			break;
 		
-		case (byte)0x32:
+		case 0x32:
 			/**
 			 * 	INS 0x23 -- Read tag data
 			 * Parameters:
@@ -343,56 +353,61 @@ public class TEMApplet extends Applet {
 			 *  69 86 (command not allowed) -- if the tag has not been set
 			 *  6A 86 (incorrect P1P2) -- if given an invalid buffer ID
 			 * Remarks:
-			 *  it is possible to get a 0 bytes return if the buffer fits in N chunks and P2 == N
-			 *  this facilitates reading the buffer w/o needing to query its length separately
+			 *  it is possible to get a 0 bytes return if the buffer fits in N chunks
+			 *  and P2 == N; this facilitates reading the buffer w/o needing to query
+			 *  its length separately
 			 */
 		
-			if(TEMTag.tag == null)
+			if (TEMTag.tag == null)
 				ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
 			
 			bufferIndex = buf[ISO7816.OFFSET_P1];
 			bufferOffset = Util.getShort(buf, ISO7816.OFFSET_CDATA);
 			bufferSize = Util.getShort(buf, (short)(ISO7816.OFFSET_CDATA + (short)2));
 			
-			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(bufferIndex)) ? TEMBuffers.get(bufferIndex) : null;
+			temBuffer = (TEMBuffers.isPublic(bufferIndex) && TEMBuffers.pin(
+			    bufferIndex)) ? TEMBuffers.get(bufferIndex) : null;
 			if(temBuffer == null || (bufferSize > TEMBuffers.size(bufferIndex)))
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
 			
-			Util.arrayCopyNonAtomic(TEMTag.tag, bufferOffset, temBuffer, (short)0, bufferSize);
+			Util.arrayCopyNonAtomic(TEMTag.tag, bufferOffset,
+			                        temBuffer, (short)0, bufferSize);
 			TEMBuffers.unpin(bufferIndex);
 			TEMApplet.sendSuccess(apdu);
 			break;			
 
 ///////////////// SEC EXECUTION ///////////////////////////			
 
-		case (byte)0x50:			
+		case 0x50:			
 			/**
 			 * 	INS 0x50 -- Load SECpack
 			 * Parameters:
 			 * 	P1 -- buffer ID of the buffer containing the SECpack
-			 *  P2 -- ID of the key that can decrypt the SECpack (ignored for unencrypted procs)
+			 *  P2 -- ID of the key that can decrypt the SECpack
+			 *        (ignored for unencrypted SECpacks)
 			 * Returns:
 			 *  byte -- 1 if the SECpack is accepted, 0 otherwise
 			 * Throws:
 			 *  6A 86 (incorrect P1P2) -- if given an invalid buffer ID
 			 */			
 
-			if(TEMExecution.status != TEMExecution.STATUS_NOSEC)
+			if (TEMExecution.status != TEMExecution.STATUS_NOSEC)
 				TEMExecution.unbindSec();
 
 			bufferIndex = buf[ISO7816.OFFSET_P1];
 			keyIndex = buf[ISO7816.OFFSET_P2];
-			if(TEMBuffers.pin(bufferIndex) == false)
+			if (TEMBuffers.pin(bufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
 			
 			TEMExecution.bindSecPack(keyIndex, bufferIndex);
 			TEMBuffers.unpin(bufferIndex);
-			if(TEMExecution.status != TEMExecution.STATUS_READY)
+			if (TEMExecution.status != TEMExecution.STATUS_READY)
 				TEMBuffers.release(bufferIndex);
-			TEMApplet.sendSuccessAndByte(apdu, (TEMExecution.status == TEMExecution.STATUS_READY) ? (byte)1 : (byte)0);
+			TEMApplet.sendSuccessAndByte(apdu, ((TEMExecution.status ==
+			  TEMExecution.STATUS_READY) ? (byte)1 : (byte)0));
 			break;
 			
-		case (byte)0x51:
+		case 0x51:
 			/**
 			 * 	INS 0x51 -- Unbind SEC
 			 * Parameters:
@@ -400,25 +415,26 @@ public class TEMApplet extends Applet {
 			 * Returns:
 			 *  if the SEC executed succesfully 
 			 *   byte -- buffer ID of a buffer containing the SEC output
-			 *   short -- number of bytes in the SEC output (buffer might be bigger, padded w/ garbage)
+			 *   short -- number of bytes in the SEC output
+			 *            (the buffer might be bigger, and padded w/ garbage)
 			 *  else
 			 *   nothing
 			 * Throws:
-			 *  69 86 (command not allowed) -- if the execution engine is not in the right state
+			 *  69 86 (command not allowed) -- execution engine not in the right state
 			 * Remarks:
-			 *  the buffer containing the Proc is released before the Proc is executed
+			 *  the buffer containing the SEC is released before the SEC is executed
 			 */			
 			keyIndex = TEMExecution.status; // abusing keyIndex to mean secStatus
 			outBufferIndex = TEMExecution.outBufferIndex;
 			outputLength = TEMExecution.outLength;
 			TEMExecution.unbindSec();
-			if(keyIndex == TEMExecution.STATUS_SUCCESS)
+			if (keyIndex == TEMExecution.STATUS_SUCCESS)
 				TEMApplet.sendSuccessAndByteShort(apdu, outBufferIndex, outputLength);
 			else
 				TEMApplet.sendSuccess(apdu);
 			break;
 			
-		case (byte)0x52:
+		case 0x52:
 			/**
 			 * 	INS 0x52 -- Execute bound SEC
 			 * Parameters:
@@ -426,10 +442,11 @@ public class TEMApplet extends Applet {
 			 * Returns:
 			 *  byte -- status of the execution engine after the SEC execution
 			 * Throws:
-			 *  6A 86 (incorrect P1P2) -- if given an invalid buffer ID
-			 *  69 86 (command not allowed) -- if the execution engine is not in the right state
+			 *  6A 86 (incorrect P1P2) -- invalid buffer ID
+			 *  69 86 (command not allowed) -- execution engine not in the right state
 			 */			
-			if(TEMExecution.status != TEMExecution.STATUS_READY || TEMBuffers.pin(TEMExecution.i_secBufferIndex) == false)
+			if (TEMExecution.status != TEMExecution.STATUS_READY ||
+			    TEMBuffers.pin(TEMExecution.i_secBufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
 			
 			TEMExecution.execute();
@@ -437,7 +454,7 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccessAndByte(apdu, TEMExecution.status);
 			break;
 
-		case (byte)0x53:
+		case 0x53:
 			/**
 			 * 	INS 0x53 -- Solve Persistent Store fault
 			 * Parameters:
@@ -445,15 +462,17 @@ public class TEMApplet extends Applet {
 			 * Returns:
 			 *  nothing
 			 * Throws:
-			 *  69 86 (command not allowed) -- if the execution engine is not in the right state
+			 *  69 86 (command not allowed) -- execution engine not in the right state
 			 * Remarks:
-			 *  this is a no-op if the SECpack containing the SEC isn't appropriately flagged
-			 *  this command is only implemented on dev TEMs
+			 *  this is a no-op if the SECpack containing the SEC isn't appropriately
+			 *  flagged; this command is only implemented on dev TEMs
 			 */			
-			if(TEMExecution.status != TEMExecution.STATUS_PSFAULT)
+			if (TEMExecution.status != TEMExecution.STATUS_PSFAULT)
 				ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
 
-			outputLength = Util.getShort(buf, ISO7816.OFFSET_P1); // abusing outputLength to mean nextCell
+		  // abusing outputLength to mean nextCell
+			outputLength = Util.getShort(buf, ISO7816.OFFSET_P1);
+			
 			TEMExecution.solvePStoreFault(outputLength);
 			TEMApplet.sendSuccess(apdu);
 			break;
@@ -479,11 +498,11 @@ public class TEMApplet extends Applet {
 			
 ///////////////// CRYPTO DEBUGGING HOOKS ///////////////////////////			
 						
-		case (byte)0x40:
+		case 0x40:
 			/**
 			 * 	INS 0x40 -- Generate Key or Key Pair
 			 * Parameters:
-			 * 	byte -- generation instructions (0x00 PKS key pair, 0x80 symmetric key)
+			 * 	byte -- key type (0x00 PKS key pair, 0x80 symmetric key)
 			 * Returns:
 			 *  byte -- key ID of private key
 			 *  byte -- key ID of public key (0 for symmetric keys)
@@ -492,12 +511,12 @@ public class TEMApplet extends Applet {
 			 */			
 			
 			// generate key pair
-			counterIndex = TEMCrypto.generateKey(true);
+			counterIndex = TEMCrypto.generateKey(buf[ISO7816.OFFSET_P1] == 0x00);
 			// counterIndex is abused to hold (privKeyIndex, pubKeyIndex)			
 			TEMApplet.sendSuccessAndShort(apdu, counterIndex);
 			break;
 			
-		case (byte)0x41:
+		case 0x41:
 			/**
 			 * 	INS 0x41 -- Release key
 			 * Parameters:
@@ -512,7 +531,7 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccess(apdu);
 			break;
 			
-		case (byte)0x42:
+		case 0x42:
 			/**
 			 * 	INS 0x42 -- Load key
 			 * Parameters:
@@ -524,21 +543,22 @@ public class TEMApplet extends Applet {
 			 *  6A 84 (file full) -- if there's not enough memory for the key
 			 */
 			bufferIndex = buf[ISO7816.OFFSET_P1];
-			if(TEMBuffers.pin(bufferIndex) == false)
+			if (TEMBuffers.pin(bufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);			
 			temBuffer = TEMBuffers.get(bufferIndex);
 			keyIndex = TEMCrypto.loadKey(temBuffer, (short)0);
 			TEMApplet.sendSuccessAndByte(apdu, keyIndex);
 			break;
 			
-		case (byte)0x43:
+		case 0x43:
 			/**
 			 * 	INS 0x43 -- Save key
 			 * Parameters:
 			 * 	P1 -- key ID of the key to be saved
 			 * Returns:
 			 * 	byte - buffer ID of buffer containing key material
-			 *  short - number of bytes in the output key (buffer may be bigger, padded w/ garbage)
+			 *  short - number of bytes in the output key
+			 *          (the buffer may be bigger, and padded w/ garbage)
 			 * Throws:
 			 *  6A 86 (incorrect P1P2) -- if given an invalid key ID
 			 *  6A 84 (file full) -- if there's not enough memory for the buffer
@@ -546,14 +566,14 @@ public class TEMApplet extends Applet {
 			keyIndex = buf[ISO7816.OFFSET_P1];	
 			bufferSize = TEMCrypto.getKeyLength(keyIndex);
 			bufferIndex = TEMBuffers.create(bufferSize);
-			if(TEMBuffers.pin(bufferIndex) == false)
+			if (TEMBuffers.pin(bufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);			
 			temBuffer = TEMBuffers.get(bufferIndex);
 			outputLength = TEMCrypto.saveKey(keyIndex, temBuffer, (short)0);
 			TEMApplet.sendSuccessAndByteShort(apdu, bufferIndex, outputLength);
 			break;
 			
-		case (byte)0x44:
+		case 0x44:
 			/**
 			 * 	INS 0x44 -- Encrypt data
 			 * Parameters:
@@ -561,14 +581,15 @@ public class TEMApplet extends Applet {
 			 *  P2 -- buffer ID of the buffer containing the data to be encrypted
 			 * Returns:
 			 * 	byte - buffer ID of buffer containing encrypted data
-			 *  short -- number of bytes in the encrypted output (buffer may be bigger, padded w/ garbage) 
+			 *  short -- number of bytes in the encrypted output
+			 *           (the buffer may be bigger, padded w/ garbage) 
 			 * Throws:
 			 *  6A 86 (incorrect P1P2) -- if given an invalid key ID or buffer ID
 			 *  6A 84 (file full) -- if there's not enough memory for the buffer
 			 * Remarks:
 			 *  the input buffer is not released automatically
 			 */
-		case (byte)0x45:
+		case 0x45:
 			/**
 			 * 	INS 0x45 -- Decrypt data
 			 * Parameters:
@@ -576,7 +597,8 @@ public class TEMApplet extends Applet {
 			 *  P2 -- buffer ID of the buffer containing the data to be decrypted
 			 * Returns:
 			 * 	byte - buffer ID of buffer containing decrypted data
-			 *  short -- number of bytes in the decrypted output (buffer may be bigger, padded w/ garbage) 
+			 *  short -- number of bytes in the decrypted output
+			 *           (the buffer may be bigger, amd padded w/ garbage) 
 			 * Throws:
 			 *  6A 86 (incorrect P1P2) -- if given an invalid key ID or buffer ID
 			 *  6A 84 (file full) -- if there's not enough memory for the buffer
@@ -585,19 +607,22 @@ public class TEMApplet extends Applet {
 			 */
 			keyIndex = buf[ISO7816.OFFSET_P1];
 			bufferIndex = buf[ISO7816.OFFSET_P2];
-			if(TEMBuffers.pin(bufferIndex) == false)
+			if (TEMBuffers.pin(bufferIndex) == false)
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);			
 			temBuffer = TEMBuffers.get(bufferIndex);
 			
 			boolean encrypting = (buf[ISO7816.OFFSET_INS] == 0x44);
 			bufferSize = TEMBuffers.size(bufferIndex);
-			outputLength = (encrypting) ? TEMCrypto.getEncryptedDataSize(keyIndex, bufferSize) : bufferSize;
+			outputLength = (encrypting) ?
+			    TEMCrypto.getEncryptedDataSize(keyIndex, bufferSize) : bufferSize;
 			outBufferIndex = TEMBuffers.create(outputLength);
 			TEMBuffers.pin(outBufferIndex);
 			outBuffer = TEMBuffers.get(outBufferIndex);
-			if(outBuffer == null)
+			if (outBuffer == null)
 				ISOException.throwIt(ISO7816.SW_FILE_FULL);
-			outputLength = TEMCrypto.cryptWithKey(keyIndex, temBuffer, (short)0, bufferSize, outBuffer, (short)0, encrypting);
+			outputLength = TEMCrypto.cryptWithKey(keyIndex, temBuffer, (short)0,
+			                                      bufferSize, outBuffer, (short)0,
+			                                      encrypting);
 			TEMBuffers.unpin(outBufferIndex);
 			TEMBuffers.unpin(bufferIndex);
 			TEMApplet.sendSuccessAndByteShort(apdu, outBufferIndex, outputLength);

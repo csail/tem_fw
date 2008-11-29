@@ -103,18 +103,18 @@ public class TEMStore {
 	                                  byte[] value, short valueOffset,
 	                                  boolean opIsRead, boolean create) {
 		short cellNumber = findCell(address, addressOffset);
-		if(cellNumber == INVALID_CELL) {
-			if(create == false)
+		if (cellNumber == INVALID_CELL) {
+			if (create == false)
 				return false;
 			
 			cellNumber = allocCell();
-			if(cellNumber == INVALID_CELL)
+			if (cellNumber == INVALID_CELL)
 				return false; // TODO: driver-managed cells or page faults
 			Util.arrayCopyNonAtomic(data, (short)(CELL_SIZE * cellNumber), address,
 			                        addressOffset, ADDRESS_SIZE);
 		}
 			
-		if(opIsRead)
+		if (opIsRead)
 			Util.arrayCopyNonAtomic(data,
 			                        (short)(CELL_SIZE * cellNumber + ADDRESS_SIZE),
 			                        value, valueOffset, VALUE_SIZE);
@@ -128,7 +128,7 @@ public class TEMStore {
 	/** Clobbers a TEM store entry. */
 	public static boolean releaseCell(byte[] address, short addressOffset) {
 		short cellNumber = findCell(address, addressOffset);
-		if(cellNumber == INVALID_CELL)
+		if (cellNumber == INVALID_CELL)
 			return false;
 		free[cellNumber >> 3] |= 1 << (cellNumber & 7);
 		return true;
