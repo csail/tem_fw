@@ -50,8 +50,8 @@ class TEMBuffers {
 		// Initialize the buffer file.
 		if (buffers != null)
 			return false;
-		buffers = JCSystem.makeTransientObjectArray(NUM_BUFFERS,
-		                                            JCSystem.CLEAR_ON_DESELECT);
+		buffers = new Object[NUM_BUFFERS];
+		
 		// The buffer file is reset to an empty state (no layout, no flags) when an
 		// application connects to the TEM applet.
 		flags = JCSystem.makeTransientByteArray(NUM_BUFFERS,
