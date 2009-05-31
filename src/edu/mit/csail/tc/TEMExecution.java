@@ -534,6 +534,9 @@ class TEMExecution {
 	 * {@link #bindSecPack(byte, byte)} should only be called when the engine's
 	 * status is {@link #STATUS_NOSEC}.
 	 * 
+	 * The SECpack is decoded in-place, so the buffer received should be large
+	 * enough to hold the decoded SECpack. 
+	 * 
 	 * @param keyIndex the ID of a key that can decrypt the SECpack
 	 * @param secPackIndex the ID of the buffer containing the SECpack whose SEC
 	 *                     will be decrypted and bound

@@ -1,3 +1,5 @@
+v1.10.1. Uncovered implied assumption in SECpack loader.
+
 v1.10. Improved code layout. Small bugfixes.
 
 v1.9.1. Loader does in-place SECpack unpacking. Better memory layout. Improved perf.
