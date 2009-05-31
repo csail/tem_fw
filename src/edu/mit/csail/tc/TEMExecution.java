@@ -293,6 +293,17 @@ class TEMExecution {
 						Util.setShort(pBuffer, operand2, operand3);
 					}
 					break;
+					
+					
+				/**** Flow control 2: procedure calls. ****/
+				case 0x3E:  // call (call procedure)
+          operand1 = Util.getShort(pBuffer, ip); ip += 2;
+          Util.setShort(pBuffer, sp, ip); sp += 2;
+          ip += operand1;
+          break;				  
+				case 0x3F:  // ret (return from procedure)
+				  sp -= 2; ip = Util.getShort(pBuffer, sp);
+				  break;
 
 
         /**** Data output ****/
