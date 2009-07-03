@@ -4,9 +4,9 @@ JavaCard development with IBM's tools requires the following software.
 The versions quoted here are the highest versions that worked for us.
 
 Windows XP SP3 (Vista works, but why would you do that to yourself?)
-JCOP 3.1.2 (nothing newer available)
-Eclipse SDK 3.3.2 (requires preference settings)
-Sun Java 1.5.0 Update 14 (private Eclipse JRE recommended, Java 6 does NOT work)
+JCOP 3.2.7 (nothing newer available)
+Eclipse SDK 3.5.0 (requires preference settings)
+Sun Java 1.5.0 Update 19 (private Eclipse JRE recommended, Java 6 does NOT work)
 
 The most convenient option for activating JCOP 3.1.2 is using
 "another activated installation". We keep a zipped workspace around.
@@ -17,11 +17,11 @@ if you're just talking to a TEM.
 
 
 MAKING JCOP BUILD UNDER ECLIPSE 3.2+
-Update: the codebase now forces the changes needed, via the files in the
-.settings folder. Look below only if, for some reason, you can't get the
-firmware built.
 
-JCOP cannot CAPify classes above Java 1.4, and Eclipse 3.2+ default to Java 5.0.
+UPDATE: the codebase forces the changes needed, via the files in the .settings
+folder. Look below only if the firmware does not build.
+
+JCOP cannot CAPify classes above Java 1.4, and Eclipse 3.2+ default to Java 1.5.
 1) Go to your JCOP project's preferences, then choose the Java Compiler tab.
 2) Check 'Enable project specific settings'
 3) Set 'Compiler compliance level' to 1.4
