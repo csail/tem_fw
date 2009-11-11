@@ -14,9 +14,6 @@ import javacard.framework.Util;
  * TEM for convenience.
  */
 public class TEMTag {
-	/** The firmware version posted in the tag. */
-	public static final short FIRMWARE_VER = 0x010B;
-	
 	/** The tag information. */
 	public static byte[] tag;
 	
@@ -51,9 +48,8 @@ public class TEMTag {
 		if (tag != null)
 			return false;
 		
-		tag = new byte[length + 2];
-		Util.setShort(tag, (short)0, FIRMWARE_VER);
-		Util.arrayCopyNonAtomic(buffer, offset, tag, (short)2, length);
+		tag = new byte[length];
+		Util.arrayCopyNonAtomic(buffer, offset, tag, (short)0, length);
 		return true;	
 	}
 }

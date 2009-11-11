@@ -33,6 +33,23 @@ JCOP cannot CAPify classes above Java 1.4, and Eclipse 3.2+ default to Java 1.5.
 If your project is still not built, go to Project > Clean... and clean it.
 
 
+RELEASING A NEW FIRMWARE VERSION
+
+A new firmware version requires bumps in two places: the FIRMWARE_VER constant 
+in TEMApplet.java, and the package version in the .cap file.
+
+The FIRMWARE_VER constant has the major version in the first byte, and the minor
+version in the second byte. Bump the minor version when adding / changing
+features. Bump the major version for architectural redesigns.
+
+To bump the version in the .cap file:
+1) Open the Java perspective or the JCOP Development perspective
+2) Browse to the edu.mit.csail.tc package under the src/ folder in the project
+3) Right-click on the package, select Properties
+4) Select 'JavaCard Settings' in the left list
+5) Adjust the number under 'Package version'. Format: major.minor in decimal.
+
+
 WORKING WITH THE SIMULATOR
 
 Make sure to make the simulator listen to the fixed port (8050) instead

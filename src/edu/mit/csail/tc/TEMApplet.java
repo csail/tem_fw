@@ -22,7 +22,10 @@ import javacard.framework.Util;
  * test points help development a lot, they should be removed from production
  * implementations.
  */
-public class TEMApplet extends Applet {	
+public class TEMApplet extends Applet {
+  /** The firmware version. */
+  public static final short FIRMWARE_VER = 0x010D;
+  
 	public static void install(byte[] bArray, short bOffset, byte bLength) {
 		// GP-compliant JavaCard applet registration
 		new TEMApplet()
@@ -101,7 +104,7 @@ public class TEMApplet extends Applet {
 			break;
 		case 0x11:
 			/**
-			 * 	INS 0x10 -- Kill TEM
+			 * 	INS 0x11 -- Kill TEM
 			 * Parameters:
 			 * 	none
 			 * Returns:
@@ -120,7 +123,17 @@ public class TEMApplet extends Applet {
 			TEMTag.deinit();
 			JCSystem.requestObjectDeletion();			
 			TEMApplet.sendSuccess(apdu);
-			break;			
+			break;
+		case 0x12:
+		  /**
+		   *  INS 0x12 -- Retrieve TEM firmware version
+		   * Parameters:
+		   *  none:
+		   * Returns:
+		   *  
+		   */
+		  TEMApplet.sendSuccessAndShort(apdu, TEMApplet.FIRMWARE_VER);
+		  break;
 
 ///////////////// RESOURCE MANAGEMENT ///////////////////////////			
 

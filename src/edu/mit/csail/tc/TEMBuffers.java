@@ -300,13 +300,15 @@ class TEMBuffers {
 		
 		// Status for each buffer file entry:
 		//   1 byte - bit 2-0: 0 = EEPROM, 1 = clear on reset, 2 = clear on deselect
+		//            bit 5: 1 = public, 0 = locked
 		//            bit 6: 1 = allocated, 0 = free
 		//            bit 7: 1 = pinned, 0 = unpinned
 		//   2 bytes - requested buffer size
 		//   2 bytes - size of actual buffer in the memory layout
 		for (byte i = 0; i < NUM_BUFFERS; i++) {
 			output[o] = (byte)(JCSystem.isTransient(buffers[i]) |
-			                   (flags[i] & BUFFER_PINNED) | (flags[i] << 6));
+			                   (flags[i] & BUFFER_PINNED) | (flags[i] << 6) |
+			                   (TEMBuffers.isPublic(i) ? 0x20 : 0));
 			o++;
 			Util.setShort(output, o, sizes[i]); o += 2;
 			Util.setShort(output, o, (short)((byte[])buffers[i]).length); o += 2;
