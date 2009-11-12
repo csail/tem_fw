@@ -40,7 +40,7 @@ class TEMCrypto {
 	public static final byte ASYMMETRIC_PRIVKEY = (byte)0x55;
 	
 	/** The cipher to be used for symmetric key encryption/decryption. */
-	private static final byte SKS_CIPHER_ID = Cipher.ALG_AES_BLOCK_128_ECB_NOPAD;	
+	private static final byte SKS_CIPHER_ID = Cipher.ALG_AES_BLOCK_128_CBC_NOPAD;	
 	/** The cipher to be used for PKS encryption/decryption. */
 	// Use this when JCOP supports OAEP padding according to PKCS#1 v2.0
 	// private static final byte pksCipherID = Cipher.ALG_RSA_PKCS1_OAEP;
@@ -190,6 +190,7 @@ class TEMCrypto {
 			random(randomMaterial, (short)0, keySize);
 			key.setKey(randomMaterial, (short)0);
 			keys[privKeyIndex] = key;
+			pubKeyIndex = INVALID_KEY;
 		}
 		return Util.makeShort(privKeyIndex, pubKeyIndex);		
 	}

@@ -515,7 +515,7 @@ public class TEMApplet extends Applet {
 			/**
 			 * 	INS 0x40 -- Generate Key or Key Pair
 			 * Parameters:
-			 * 	byte -- key type (0x00 PKS key pair, 0x80 symmetric key)
+			 * 	P1 -- key type (0x00 PKS key pair, 0x80 symmetric key)
 			 * Returns:
 			 *  byte -- key ID of private key
 			 *  byte -- key ID of public key (0 for symmetric keys)
