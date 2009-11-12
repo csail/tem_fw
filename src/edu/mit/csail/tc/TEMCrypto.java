@@ -530,7 +530,7 @@ class TEMCrypto {
 		return digest.getLength();
 	}
 	public static final short getDigestBlockLength() {
-		// dunno how to get message digest block lengths from crypto 
+		// NOTE: Don't khow to get message digest block lengths in the JavaCard API.
 		return (short)20;
 	}	
 	
