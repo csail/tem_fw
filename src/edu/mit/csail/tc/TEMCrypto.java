@@ -154,18 +154,18 @@ class TEMCrypto {
 	}
 	/**
 	 * Generates an encryption key (or key pair, for PKS).
-	 * @param asymmetric_key <code>true</code> to obtain a PKS key, or
-	 *                       <code>false</code> for a symmetric key
+	 * @param keyIsAsymmetric <code>true</code> to obtain a PKS key, or
+	 *                        <code>false</code> for a symmetric key
 	 * @return a tuple (slot of private key, slot of public key / zero for
 	 *         symmetric keys) packaged in a short
 	 */
-	public static final short generateKey(boolean asymmetric_key) {
+	public static final short generateKey(boolean keyIsAsymmetric) {
 		byte privKeyIndex = findFreeKeySlot();
 		byte pubKeyIndex = privKeyIndex;
 		if (privKeyIndex == INVALID_KEY)
 		  return INVALID_KEY_PAIR;
 
-		if (asymmetric_key) {
+		if (keyIsAsymmetric) {
 			// Asymmetric key pair.
 			KeyPair newKP = new KeyPair(KeyPair.ALG_RSA_CRT,
 			                            KeyBuilder.LENGTH_RSA_2048);
@@ -396,7 +396,7 @@ class TEMCrypto {
 		if (cryptKey instanceof AESKey) {
 			// Prepare for symmetric encryption
 			cipher = symCipher;
-			inBlockSize = outBlockSize = (short)(cryptKey.getSize() >> 3);
+			inBlockSize = outBlockSize = sourceLength;
 		}
 		else {
 			// Prepare for asymmetric encryption
