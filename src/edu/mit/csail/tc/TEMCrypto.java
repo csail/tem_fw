@@ -114,8 +114,8 @@ class TEMCrypto {
 		digest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
 		digest.reset();		
 		randomizer = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
-		symSignature = Signature.getInstance(Signature.ALG_DES_MAC8_PKCS5,
-		                                     false);
+		symSignature = Signature.getInstance(
+		    Signature.ALG_DES_MAC8_ISO9797_1_M2_ALG3, false);
 		asymSignature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 		randomMaterial = JCSystem.makeTransientByteArray((short)16,
         JCSystem.CLEAR_ON_DESELECT);
