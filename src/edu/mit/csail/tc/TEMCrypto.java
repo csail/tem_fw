@@ -114,8 +114,8 @@ class TEMCrypto {
 		digest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
 		digest.reset();		
 		randomizer = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
-		symSignature = Signature.getInstance(
-		    Signature.ALG_DES_MAC8_ISO9797_1_M2_ALG3, false);
+		symSignature = Signature.getInstance(Signature.ALG_DES_MAC8_ISO9797_M2,
+		                                     false);
 		asymSignature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 		randomMaterial = JCSystem.makeTransientByteArray((short)16,
         JCSystem.CLEAR_ON_DESELECT);
@@ -397,22 +397,20 @@ class TEMCrypto {
 	                                       boolean doEncrypt) {
 		Key cryptKey = keys[keyIndex];
 		Cipher cipher;		
-		short outBlockSize, inBlockSize;
+		short inBlockSize;
 		if (cryptKey instanceof DESKey) {
 			// Prepare for symmetric encryption
 			cipher = symCipher;
-			inBlockSize = outBlockSize = sourceLength;
+			inBlockSize = sourceLength;
 		}
 		else {
 			// Prepare for asymmetric encryption
 			cipher = asymCipher;
 			if (doEncrypt) {
-				outBlockSize = (short)(cryptKey.getSize() >> 3);
-				inBlockSize = (short)(outBlockSize - pksCipherPadding);
+				inBlockSize = (short)((cryptKey.getSize() >> 3) - pksCipherPadding);
 			}
 			else {
 				inBlockSize = (short)(cryptKey.getSize() >> 3);
-				outBlockSize = (short)(inBlockSize - pksCipherPadding);			
 			}
 		}
 		cipher.init(cryptKey,
