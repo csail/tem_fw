@@ -490,18 +490,20 @@ class TEMExecution {
 					result = TEMCrypto.getKeyLength((byte)operand1);
 					Util.setShort(pBuffer, sp, result); sp += 2;
 					break;
-				case 0x5E: // genkp (generate key pair)
+				case 0x5E: // genkp (generate key / key pair)
 					operand1 = pBuffer[ip]; ip++;
 					result = TEMCrypto.generateKey(operand1 == 0);
 					operand2 = (short)(result >> 8);
 					operand3 = (short)(result & 0xff);
 					if(operand2 != TEMCrypto.INVALID_KEY)
 						authorizedKeys[operand2] = true;
-					if(operand3 != TEMCrypto.INVALID_KEY)
+					if(operand1 == 0 && operand3 != TEMCrypto.INVALID_KEY)
 						authorizedKeys[operand3] = true;
 												
 					Util.setShort(pBuffer, sp, operand2); sp += 2;
-					Util.setShort(pBuffer, sp, operand3); sp += 2;
+					if (operand1 == 0) {
+	          Util.setShort(pBuffer, sp, operand3); sp += 2;
+					}
 					break;
 				case 0x5F: // authk (authorize key)
 					sp -= 2; operand1 = Util.getShort(pBuffer, sp);

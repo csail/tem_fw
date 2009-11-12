@@ -186,7 +186,7 @@ class TEMCrypto {
 			AESKey key = (AESKey)KeyBuilder.buildKey(KeyBuilder.TYPE_AES,
 			                                         KeyBuilder.LENGTH_AES_128,
 			                                         false);
-			short keySize = (short)(key.getSize() / 4);
+			short keySize = (short)(key.getSize() / 8);
 			random(randomMaterial, (short)0, keySize);
 			key.setKey(randomMaterial, (short)0);
 			keys[privKeyIndex] = key;
