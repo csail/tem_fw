@@ -3,6 +3,7 @@ package edu.mit.csail.tc;
 import javacard.framework.JCSystem;
 import javacard.framework.Util;
 import javacard.security.AESKey;
+import javacard.security.DESKey;
 import javacard.security.Key;
 import javacard.security.KeyBuilder;
 import javacard.security.KeyPair;
@@ -40,7 +41,7 @@ class TEMCrypto {
 	public static final byte ASYMMETRIC_PRIVKEY = (byte)0x55;
 	
 	/** The cipher to be used for symmetric key encryption/decryption. */
-	private static final byte SKS_CIPHER_ID = Cipher.ALG_AES_BLOCK_128_CBC_NOPAD;	
+	private static final byte SKS_CIPHER_ID = Cipher.ALG_DES_CBC_PKCS5;	
 	/** The cipher to be used for PKS encryption/decryption. */
 	// Use this when JCOP supports OAEP padding according to PKCS#1 v2.0
 	// private static final byte pksCipherID = Cipher.ALG_RSA_PKCS1_OAEP;
@@ -113,7 +114,7 @@ class TEMCrypto {
 		digest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
 		digest.reset();		
 		randomizer = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
-		symSignature = Signature.getInstance(Signature.ALG_AES_MAC_128_NOPAD,
+		symSignature = Signature.getInstance(Signature.ALG_DES_MAC8_PKCS5,
 		                                     false);
 		asymSignature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 		randomMaterial = JCSystem.makeTransientByteArray((short)16,
@@ -183,8 +184,8 @@ class TEMCrypto {
 		}
 		else {
 			// Symmetric key.
-			AESKey key = (AESKey)KeyBuilder.buildKey(KeyBuilder.TYPE_AES,
-			                                         KeyBuilder.LENGTH_AES_128,
+		  DESKey key = (DESKey)KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
+			                                         KeyBuilder.LENGTH_DES3_2KEY,
 			                                         false);
 			short keySize = (short)(key.getSize() / 8);
 			random(randomMaterial, (short)0, keySize);
@@ -204,9 +205,9 @@ class TEMCrypto {
 		pubKey.setModulus(buffer, readOffset, length);
 		return pubKey;	
 	}	
-	private static final AESKey loadSymmetricKey(byte[] buffer, short offset) {
-		AESKey sksKey = (AESKey)KeyBuilder.buildKey(KeyBuilder.TYPE_AES,
-		                                            KeyBuilder.LENGTH_AES_128,
+	private static final DESKey loadSymmetricKey(byte[] buffer, short offset) {
+		DESKey sksKey = (DESKey)KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
+		                                            KeyBuilder.LENGTH_DES3_2KEY,
 		                                            false);
 		sksKey.setKey(buffer, offset);
 		return sksKey;
@@ -278,8 +279,8 @@ class TEMCrypto {
 			// plus 4 bytes for header (2 numbers shorts)
 			return (short)((key.getSize() >> 2) + 4 + KEY_HEADER_BYTES);			
 		}
-		else if (key instanceof AESKey) {
-			// AES keys are so much more straightforward...
+		else if (key instanceof DESKey) {
+			// DES keys are so much more straightforward...
 			return (short)((key.getSize() >> 3) + KEY_HEADER_BYTES);
 		}
 		else
@@ -324,7 +325,7 @@ class TEMCrypto {
 		
 		return (short)(writeOffset - offset);
 	}
-	private static final short saveSymmetricKey(AESKey key, byte[] buffer,
+	private static final short saveSymmetricKey(DESKey key, byte[] buffer,
 	                                            short offset) {
 		return key.getKey(buffer, offset);
 	}
@@ -333,7 +334,7 @@ class TEMCrypto {
 			return ASYMMETRIC_PRIVKEY;
 		else if (key instanceof RSAPublicKey)
 			return ASYMMETRIC_PUBKEY;
-		else if (key instanceof AESKey)
+		else if (key instanceof DESKey)
 			return SYMMETRIC_KEY;
 		return INVALID_KEY;
 	}
@@ -347,8 +348,8 @@ class TEMCrypto {
 			writeOffset = savePrivateKey((RSAPrivateCrtKey)key, buffer, writeOffset);			
 		else if (key instanceof RSAPublicKey)
 			writeOffset = savePublicKey((RSAPublicKey)key, buffer, writeOffset);			
-		else if (key instanceof AESKey)
-			writeOffset = saveSymmetricKey((AESKey)key, buffer, writeOffset);
+		else if (key instanceof DESKey)
+			writeOffset = saveSymmetricKey((DESKey)key, buffer, writeOffset);
 		return (short)(writeOffset + KEY_HEADER_BYTES);
 	}
 	
@@ -362,10 +363,14 @@ class TEMCrypto {
 	public static final short getEncryptedDataSize(byte keyIndex,
 	                                                short plainBytes) {
 		Key pk = keys[keyIndex];
-		short outBlockSize = (short)(pk.getSize() >> 3);
-		short inBlockSize = (pk instanceof AESKey) ? outBlockSize :
-		  (short)(outBlockSize - pksCipherPadding);
-		return (short)((plainBytes + inBlockSize - 1) / inBlockSize * outBlockSize);
+		if (pk instanceof DESKey) {
+		  short blockSize = (short)(pk.getSize() >> 3);
+		  return (short)((plainBytes + blockSize) / blockSize * blockSize);
+		}
+		
+	  short outBlockSize = (short)(pk.getSize() >> 3);
+    short inBlockSize = (short)(outBlockSize - pksCipherPadding);
+    return (short)((plainBytes + inBlockSize - 1) / inBlockSize * outBlockSize);
 	}
 	 
 	/**
@@ -393,7 +398,7 @@ class TEMCrypto {
 		Key cryptKey = keys[keyIndex];
 		Cipher cipher;		
 		short outBlockSize, inBlockSize;
-		if (cryptKey instanceof AESKey) {
+		if (cryptKey instanceof DESKey) {
 			// Prepare for symmetric encryption
 			cipher = symCipher;
 			inBlockSize = outBlockSize = sourceLength;
@@ -454,7 +459,7 @@ class TEMCrypto {
 		Signature signature;
 		short signatureSize;
 
-		if (signKey instanceof AESKey) {
+		if (signKey instanceof DESKey) {
 			// HMAC setup
 			signature = symSignature;
 		}
