@@ -24,7 +24,7 @@ import javacard.framework.Util;
  */
 public class TEMApplet extends Applet {
   /** The firmware version. */
-  public static final short FIRMWARE_VER = 0x010E;
+  public static final short FIRMWARE_VER = 0x010F;
   
 	public static void install(byte[] bArray, short bOffset, byte bLength) {
 		// GP-compliant JavaCard applet registration

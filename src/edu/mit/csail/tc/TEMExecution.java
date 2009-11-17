@@ -456,7 +456,7 @@ class TEMExecution {
 							                               operand3, ((opcode & 2) == 0));
 					}
 					Util.setShort(pBuffer, sp, result); sp += 2;
-					break;
+					break;				  
 				case 0x5A: // rdk  (read key) 
 					sp -= 2; operand1 = Util.getShort(pBuffer, sp);
 					result = TEMCrypto.loadKey(pBuffer, operand1);
@@ -464,17 +464,24 @@ class TEMExecution {
 						authorizedKeys[result] = true;
 					Util.setShort(pBuffer, sp, result); sp += 2;
 					break;
+        case 0x58: // ldkel (load key encryption length)
 				case 0x5B: // stk (store key)
 					sp -= 2; operand2 = Util.getShort(pBuffer, sp);
 					sp -= 2; operand1 = Util.getShort(pBuffer, sp);
 					if(authorizedKeys[operand1] == false)
 						ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-					if(operand2 == (short)-1) {
-						result = TEMCrypto.saveKey((byte)operand1, outBuffer, outOffset);
-						outOffset += result;						
+
+					if (opcode == 0x58) {  // ldkel
+					  result = TEMCrypto.getEncryptedDataSize((byte)operand1, operand2);
 					}
-					else
-						result = TEMCrypto.saveKey((byte)operand1, pBuffer, operand2);
+					else {
+  					if(operand2 == (short)-1) {  // stk
+  						result = TEMCrypto.saveKey((byte)operand1, outBuffer, outOffset);
+  						outOffset += result;						
+  					}
+  					else
+  						result = TEMCrypto.saveKey((byte)operand1, pBuffer, operand2);
+					}
 					Util.setShort(pBuffer, sp, result); sp += 2;
 					break;
 				case 0x5C: // relk (release key)
