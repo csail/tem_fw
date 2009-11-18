@@ -508,6 +508,22 @@ public class TEMApplet extends Applet {
 			apdu.setOutgoingAndSend((short)0, bufferSize);
 			break;
 			
+    case 0x41:
+      /**
+       *  INS 0x41 -- Release key
+       * Parameters:
+       *  P1 -- key ID
+       * Returns:
+       *  nothing
+       * Throws:
+       *  nothing -- an invalid key ID is a NOP
+       */
+      // NOTE: this key-related method must be implemented on production TEMs to
+      //       prevent SEClosure DOSing by filling the key store 
+      keyIndex = buf[ISO7816.OFFSET_P1];
+      TEMCrypto.releaseKey(keyIndex);
+      TEMApplet.sendSuccess(apdu);
+      break;
 			
 ///////////////// CRYPTO DEBUGGING HOOKS ///////////////////////////			
 						
@@ -527,21 +543,6 @@ public class TEMApplet extends Applet {
 			counterIndex = TEMCrypto.generateKey(buf[ISO7816.OFFSET_P1] == 0x00);
 			// counterIndex is abused to hold (privKeyIndex, pubKeyIndex)			
 			TEMApplet.sendSuccessAndShort(apdu, counterIndex);
-			break;
-			
-		case 0x41:
-			/**
-			 * 	INS 0x41 -- Release key
-			 * Parameters:
-			 * 	P1 -- key ID
-			 * Returns:
-			 * 	nothing
-			 * Throws:
-			 *  nothing -- an invalid key ID is a NOP
-			 */
-			keyIndex = buf[ISO7816.OFFSET_P1];
-			TEMCrypto.releaseKey(keyIndex);
-			TEMApplet.sendSuccess(apdu);
 			break;
 			
 		case 0x42:
