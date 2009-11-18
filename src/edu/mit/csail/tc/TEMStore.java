@@ -110,8 +110,8 @@ public class TEMStore {
 			cellNumber = allocCell();
 			if (cellNumber == INVALID_CELL)
 				return false; // TODO: driver-managed cells or page faults
-			Util.arrayCopyNonAtomic(data, (short)(CELL_SIZE * cellNumber), address,
-			                        addressOffset, ADDRESS_SIZE);
+			Util.arrayCopyNonAtomic(address, addressOffset, data,
+			                        (short)(CELL_SIZE * cellNumber), ADDRESS_SIZE);
 		}
 			
 		if (opIsRead)
