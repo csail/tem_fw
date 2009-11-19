@@ -24,7 +24,7 @@ import javacard.framework.Util;
  */
 public class TEMApplet extends Applet {
   /** The firmware version. */
-  public static final short FIRMWARE_VER = 0x010F;
+  public static final short FIRMWARE_VER = 0x0110;
   
 	public static void install(byte[] bArray, short bOffset, byte bLength) {
 		// GP-compliant JavaCard applet registration
@@ -309,6 +309,23 @@ public class TEMApplet extends Applet {
 				bufferSize = TEMCrypto.stat(buf, (short)0);
 			apdu.setOutgoingAndSend((short)0, bufferSize);
 			break;
+			
+    case 0x28:
+      /**
+       *  INS 0x28 -- Release key
+       * Parameters:
+       *  P1 -- key ID
+       * Returns:
+       *  nothing
+       * Throws:
+       *  nothing -- an invalid key ID is a NOP
+       */
+      // NOTE: this key-related method must be implemented on production TEMs to
+      //       prevent SEClosure DOSing by filling the key store 
+      keyIndex = buf[ISO7816.OFFSET_P1];
+      TEMCrypto.releaseKey(keyIndex);
+      TEMApplet.sendSuccess(apdu);
+      break;			
 
 ///////////////// TAG ///////////////////////////
 			
@@ -507,24 +524,7 @@ public class TEMApplet extends Applet {
 			bufferSize = TEMExecution.devTrace(buf, (short)0);
 			apdu.setOutgoingAndSend((short)0, bufferSize);
 			break;
-			
-    case 0x41:
-      /**
-       *  INS 0x41 -- Release key
-       * Parameters:
-       *  P1 -- key ID
-       * Returns:
-       *  nothing
-       * Throws:
-       *  nothing -- an invalid key ID is a NOP
-       */
-      // NOTE: this key-related method must be implemented on production TEMs to
-      //       prevent SEClosure DOSing by filling the key store 
-      keyIndex = buf[ISO7816.OFFSET_P1];
-      TEMCrypto.releaseKey(keyIndex);
-      TEMApplet.sendSuccess(apdu);
-      break;
-			
+						
 ///////////////// CRYPTO DEBUGGING HOOKS ///////////////////////////			
 						
 		case 0x40:
@@ -545,9 +545,9 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccessAndShort(apdu, counterIndex);
 			break;
 			
-		case 0x42:
+		case 0x41:
 			/**
-			 * 	INS 0x42 -- Load key
+			 * 	INS 0x41 -- Load key
 			 * Parameters:
 			 * 	P1 -- buffer ID of the buffer containing key data
 			 * Returns:
@@ -564,9 +564,9 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccessAndByte(apdu, keyIndex);
 			break;
 			
-		case 0x43:
+		case 0x42:
 			/**
-			 * 	INS 0x43 -- Save key
+			 * 	INS 0x42 -- Save key
 			 * Parameters:
 			 * 	P1 -- key ID of the key to be saved
 			 * Returns:
@@ -587,9 +587,9 @@ public class TEMApplet extends Applet {
 			TEMApplet.sendSuccessAndByteShort(apdu, bufferIndex, outputLength);
 			break;
 			
-		case 0x44:
+		case 0x43:
 			/**
-			 * 	INS 0x44 -- Encrypt data
+			 * 	INS 0x43 -- Encrypt data
 			 * Parameters:
 			 * 	P1 -- key ID of the encryption key
 			 *  P2 -- buffer ID of the buffer containing the data to be encrypted
@@ -603,9 +603,9 @@ public class TEMApplet extends Applet {
 			 * Remarks:
 			 *  the input buffer is not released automatically
 			 */
-		case 0x45:
+		case 0x44:
 			/**
-			 * 	INS 0x45 -- Decrypt data
+			 * 	INS 0x44 -- Decrypt data
 			 * Parameters:
 			 * 	P1 -- key ID of the encryption key
 			 *  P2 -- buffer ID of the buffer containing the data to be decrypted
@@ -625,7 +625,7 @@ public class TEMApplet extends Applet {
 				ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);			
 			temBuffer = TEMBuffers.get(bufferIndex);
 			
-			boolean encrypting = (buf[ISO7816.OFFSET_INS] == 0x44);
+			boolean encrypting = (buf[ISO7816.OFFSET_INS] == 0x43);
 			bufferSize = TEMBuffers.size(bufferIndex);
 			outputLength = (encrypting) ?
 			    TEMCrypto.getEncryptedDataSize(keyIndex, bufferSize) : bufferSize;

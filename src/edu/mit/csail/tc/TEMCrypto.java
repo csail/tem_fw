@@ -2,7 +2,6 @@ package edu.mit.csail.tc;
 
 import javacard.framework.JCSystem;
 import javacard.framework.Util;
-import javacard.security.AESKey;
 import javacard.security.DESKey;
 import javacard.security.Key;
 import javacard.security.KeyBuilder;
